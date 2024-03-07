@@ -94,6 +94,9 @@ async function reportAll(
   }
 
   const commentOnPR: string = core.getInput('comment_on_pr')
+  logger.debug(`Comment on PR: ${commentOnPR}`)
+  logger.debug(`PR: ${JSON.stringify(pull_request)}`)
+  console.log(commentOnPR, pull_request);
   if (pull_request && ['true', 'update'].indexOf(commentOnPR) >= 0) {
     if (logger.isDebugEnabled()) {
       logger.debug(`Found Pull Request: ${JSON.stringify(pull_request)}`)
