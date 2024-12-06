@@ -54313,11 +54313,32 @@ function reportAll(currentJob, content) {
             yield core.summary.write();
         }
         const commentOnPR = core.getInput('comment_on_pr');
-        if (pull_request && 'true' === commentOnPR) {
+        logger.info(`Comment on PR: ${commentOnPR}`);
+        if (pull_request && ['true', 'update'].indexOf(commentOnPR) >= 0) {
             if (logger.isDebugEnabled()) {
                 logger.debug(`Found Pull Request: ${JSON.stringify(pull_request)}`);
             }
-            yield octokit.rest.issues.createComment(Object.assign(Object.assign({}, github.context.repo), { issue_number: Number((_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number), body: postContent }));
+            const issueNumber = Number((_a = github.context.payload.pull_request) === null || _a === void 0 ? void 0 : _a.number);
+            let createComment = true;
+            if ('update' === commentOnPR) {
+                let existingComment, comments, page = 1;
+                do {
+                    comments = yield octokit.rest.issues.listComments(Object.assign(Object.assign({}, github.context.repo), { issue_number: issueNumber, page }));
+                    existingComment = comments.data.find((comment) => { var _a; return (_a = comment.body) === null || _a === void 0 ? void 0 : _a.startsWith(title); });
+                    page++;
+                } while (!existingComment && comments.data.length > 0);
+                if (existingComment) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(`Found Comment: ${existingComment.id}`);
+                    }
+                    logger.info(`Updating existing comment: ${existingComment}`);
+                    createComment = false;
+                    yield octokit.rest.issues.updateComment(Object.assign(Object.assign({}, github.context.repo), { comment_id: existingComment.id, body: postContent }));
+                }
+            }
+            if (createComment) {
+                yield octokit.rest.issues.createComment(Object.assign(Object.assign({}, github.context.repo), { issue_number: issueNumber, body: postContent }));
+            }
         }
         else {
             logger.debug(`Couldn't find Pull Request`);

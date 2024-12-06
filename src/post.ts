@@ -94,6 +94,8 @@ async function reportAll(
   }
 
   const commentOnPR: string = core.getInput('comment_on_pr')
+  logger.info(`Comment on PR: ${commentOnPR}`)
+
   if (pull_request && ['true', 'update'].indexOf(commentOnPR) >= 0) {
     if (logger.isDebugEnabled()) {
       logger.debug(`Found Pull Request: ${JSON.stringify(pull_request)}`)
@@ -111,8 +113,8 @@ async function reportAll(
           issue_number: issueNumber,
           page
         })
-        existingComment = comments.data.find(
-          (comment: any) => comment.body?.startsWith(title)
+        existingComment = comments.data.find((comment: any) =>
+          comment.body?.startsWith(title)
         )
         page++
       } while (!existingComment && comments.data.length > 0)
@@ -121,6 +123,7 @@ async function reportAll(
         if (logger.isDebugEnabled()) {
           logger.debug(`Found Comment: ${existingComment.id}`)
         }
+        logger.info(`Updating existing comment: ${existingComment}`)
         createComment = false
         await octokit.rest.issues.updateComment({
           ...github.context.repo,
